@@ -11,7 +11,10 @@ import SwiftUI
 struct FollowYourStepApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // ContentView()
+            MapView()
+                .previewLayout(.sizeThatFits)
+                .padding()
         }
     }
 }
