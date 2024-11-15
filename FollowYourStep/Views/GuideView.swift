@@ -39,20 +39,33 @@ struct GuideView: View {
             }
             .padding()
             
-            // 使用Map视图展示多个Post的标记和路线
-            Map(coordinateRegion: $region, showsUserLocation: true, userTrackingMode: .none, annotationItems: viewModel.guide.posts) { post in
-                MapPin(coordinate: post.coordinate, tint: .blue)
-            }
+//            // 使用Map视图展示多个Post的标记和路线
+//            Map(coordinateRegion: $region, showsUserLocation: true, userTrackingMode: .none, annotationItems: viewModel.guide.posts) { post in
+//                MapAnnotation(coordinate: post.coordinate) {
+//                    // 结合NavigationLink实现点击查看详情
+//                    NavigationLink(destination: PostDetailView(viewModel: PostDetailViewModel(post: post))) {
+//                        VStack {
+//                            Image(systemName: "star.fill")
+//                                .foregroundColor(.red)
+//                            Text(post.title)
+//                                .font(.caption)
+//                                .foregroundColor(.red)
+//                        }
+//                    }
+//                }
+//            }
+            // 使用 PathView 来显示路径
+            PathView(coordinates: viewModel.guide.posts.map { $0.coordinate },
+                     posts: viewModel.guide.posts) { selectedPost in
+                 // 处理点击标记后的操作
+                 self.selectedPost = selectedPost
+             }
+             .edgesIgnoringSafeArea(.all)
             .onAppear {
                 // 更新地图区域或其他初始化任务
                 updateMapRegion()
             }
-//            .overlay(
-//                    PolylineView(coordinates: viewModel.routeCoordinates)
-//            )
-//            .onChange(of: selectedPost) { _ in
-//                // 在这里处理点击标记后的操作，比如显示Post详情
-//            }
+
             Spacer()
         }
         .edgesIgnoringSafeArea(.all)
@@ -61,10 +74,25 @@ struct GuideView: View {
     // 更新地图区域，使其显示所有Post的位置
     func updateMapRegion() {
         let coordinates = viewModel.guide.posts.map { $0.coordinate }
-        if let firstCoordinate = coordinates.first {
-            let span = MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
-            region = MKCoordinateRegion(center: firstCoordinate, span: span)
-        }
+        guard !coordinates.isEmpty else { return }
+
+        let latitudes = coordinates.map { $0.latitude }
+        let longitudes = coordinates.map { $0.longitude }
+
+        let minLat = latitudes.min() ?? 37.7749
+        let maxLat = latitudes.max() ?? 37.7749
+        let minLon = longitudes.min() ?? -122.4194
+        let maxLon = longitudes.max() ?? -122.4194
+
+        let center = CLLocationCoordinate2D(
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLon + maxLon) / 2
+        )
+        let span = MKCoordinateSpan(
+            latitudeDelta: maxLat - minLat + 0.05,
+            longitudeDelta: maxLon - minLon + 0.05
+        )
+        region = MKCoordinateRegion(center: center, span: span)
     }
     
 }
